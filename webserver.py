@@ -1,17 +1,10 @@
 from flask import Flask, request, render_template, session, redirect, url_for, flash
 import sqlite3
 import subprocess
-import jwt
 from functools import wraps
-import datetime
-from socket_listener import SocketListener as sl
-
-
-
+import socket
 
 app = Flask(__name__)
-
-app.config['SECRET_KEY'] = 's3cr3t' 
 
 app.secret_key = 'zattirizortzort'
 username = 'admin'
@@ -21,30 +14,6 @@ users = {
     'admin': 'admin'
 }
 
-
-# Kullanıcı doğrulama fonksiyonu
-def authenticate(username, password):
-    return users.get(username) == password
-
-# Kullanıcı yetkilendirme decorator'ı
-def token_required(f):
-    @wraps(f)
-    def decorated(*args, **kwargs):
-        token = session.get('token')
-
-        if not token:
-            return redirect(url_for('login'))
-
-        try:
-            data = jwt.decode(token, app.config['SECRET_KEY'])
-        except:
-            return redirect(url_for('login'))
-
-        return f(*args, **kwargs)
-
-    return decorated
-
-
 # Kullanıcı giriş işlemi
 @app.route('/', methods=['GET', 'POST'])
 def login():
@@ -52,16 +21,14 @@ def login():
         form_username = request.form.get("username")
         form_password = request.form.get("password") 
 
-        if authenticate(form_username, form_password):
-            token = jwt.encode({'username': form_username, 'exp': datetime.datetime.utcnow() + datetime.timedelta(minutes=30)}, app.config['SECRET_KEY'])
-            session['token'] = token
+        if form_username in users and users[form_username] == form_password:
+            session['logged_in'] = True
             return redirect(url_for('mainpage'))
         else:
-            flash('Giriş bilgileri yanlış!')
+            flash("Invalid credentials.")
             return redirect(url_for('login'))
 
     return render_template('login.html')
-
 
 
 @app.route('/mainpage', methods=['GET', 'POST'])
@@ -73,13 +40,28 @@ def mainpage():
 
         data = request.data.decode('utf-8')
         
-
         if data == 'true':
+            
             subprocess.Popen(['python3', '-c', 'import os; os.system("python3 socket_listener.py")'])
 
             return "Listener started from webserver."
         elif data == 'false':
-            subprocess.Popen(['killall', 'socket_listener.py'])
+            command = """
+                import os
+                import socket_listener
+
+                close = socket_listener.Listener()
+                close.close_connection()
+                os.system("pkill -f socket_listener.py")
+                """
+
+            subprocess.Popen(['python3', '-c', command], 
+                                stdin=subprocess.PIPE,
+                                stdout=subprocess.PIPE,
+                                stderr=subprocess.PIPE,
+                                text=True
+                            )
+            
             return "Listener already stopped."
             
         else:

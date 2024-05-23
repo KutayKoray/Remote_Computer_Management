@@ -98,5 +98,9 @@ class SocketListener:
         self.my_connection.close()
         print("Connections are closed.")
 
+
+my_listener = SocketListener("192.168.1.42",8080)
+my_listener.start_listener()
+
     
 

