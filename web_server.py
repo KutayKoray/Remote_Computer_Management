@@ -14,7 +14,7 @@ def send_data_to_socket(data):
     try:
         # 192.168.1.62 adresine ve 8080 portuna bağlanın
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
-            sock.connect(('192.168.1.53', 8080))
+            sock.connect(('192.168.1.15', 8080))
             data = "web:" + data
             #sock.sendall(data.encode('utf-8'))
             json_send(data, sock)

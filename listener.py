@@ -5,7 +5,7 @@ import base64
 import sqlite3
 from datetime import datetime
 
-host = "192.168.1.53"
+host = "192.168.1.15"
 port = 8080
 
 soc = socket(AF_INET, SOCK_STREAM)

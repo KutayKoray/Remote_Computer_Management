@@ -84,7 +84,7 @@ def main():
 if __name__ == "__main__":
     while True:
         try:
-            host = "192.168.1.53"
+            host = "192.168.1.15"
             port = 8080
 
             client_socket = socket(AF_INET, SOCK_STREAM)
