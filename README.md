@@ -1,4 +1,4 @@
-# My Project on Cybersecurity
+# Cybersecurity Project
 
 Published at the **Kongrensem Symposium**.
 
